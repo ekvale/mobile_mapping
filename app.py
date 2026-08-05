@@ -2,6 +2,7 @@
 Participating Minnesota Mobile Medical Programs — Interactive Map
 Run: streamlit run app.py
 """
+from __future__ import annotations
 
 import hashlib
 import math
