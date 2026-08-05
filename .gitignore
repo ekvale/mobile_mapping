@@ -1,0 +1,22 @@
+# ── Identifiable survey data — never commit ────────────────────────────────
+private_data/
+*REDCap*DATA*.csv
+
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.Python
+*.egg-info/
+
+# ── Streamlit ──────────────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── OS / editor ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
