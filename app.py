@@ -2,7 +2,6 @@
 Participating Minnesota Mobile Medical Programs — Interactive Map
 Run: streamlit run app.py
 """
-from __future__ import annotations
 
 import hashlib
 import math
@@ -237,7 +236,7 @@ def add_marker(fmap, lat, lon, color, fill_opacity, dash_array, tooltip_text, po
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(ROOT / "data" / "cleaned_mobile_landscape_data.csv")
+    df = pd.read_csv(ROOT / "cleaned_mobile_landscape_data.csv")
     return df[df["program_type"] != "Incomplete"].reset_index(drop=True)
 
 df_all = load_data()
@@ -332,57 +331,107 @@ if walkins_only:
 
 # ── Build map ──────────────────────────────────────────────────────────────
 
+
 st.title("Participating Minnesota Mobile Medical Programs")
 st.caption(
-    f"Showing **{len(df)}** organization(s) — click any marker for details. "
-    ""
+    f"Showing **{len(df)}** organization(s) — click any marker for details."
 )
 
 # Minnesota center
 mn_center = [46.40, -93.60]
+
+# Create map WITHOUT CartoDB
 fmap = folium.Map(
     location=mn_center,
     zoom_start=7,
-    tiles="CartoDB positron",
+    tiles=None,
     prefer_canvas=True,
 )
+
+# OpenStreetMap (no API key required)
+folium.TileLayer(
+    tiles="https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attr="© OpenStreetMap contributors",
+    name="OpenStreetMap",
+).add_to(fmap)
 
 # Add markers
 for _, row in df.iterrows():
     name = org_label(row)
-    pt = row.get("program_type", "")
+
     does_mobile = row.get("operates_mobile_units") == "Yes"
     does_street = row.get("operates_street_medicine") == "Yes"
 
-    # Collect (county, mode, frequency, color, fill_opacity, dash_array) tuples
-    entries: list[tuple] = []
+    entries = []
 
     if does_mobile:
         for county in split_list(row.get("counties_mobile_primary", "")):
-            entries.append((county, "Mobile", "Primary", MOBILE_COLOR, 0.85, None))
+            entries.append(
+                (county, "Mobile", "Primary", MOBILE_COLOR, 0.85, None)
+            )
+
         if show_secondary:
             for county in split_list(row.get("counties_mobile_secondary", "")):
-                entries.append((county, "Mobile", "Secondary", MOBILE_COLOR, 0.30, "6, 4"))
+                entries.append(
+                    (county, "Mobile", "Secondary", MOBILE_COLOR, 0.30, "6,4")
+                )
 
     if does_street:
         for county in split_list(row.get("counties_street_primary", "")):
-            entries.append((county, "Street", "Primary", STREET_COLOR, 0.85, None))
+            entries.append(
+                (county, "Street", "Primary", STREET_COLOR, 0.85, None)
+            )
+
         if show_secondary:
             for county in split_list(row.get("counties_street_secondary", "")):
-                entries.append((county, "Street", "Secondary", STREET_COLOR, 0.30, "6, 4"))
+                entries.append(
+                    (county, "Street", "Secondary", STREET_COLOR, 0.30, "6,4")
+                )
 
     for county, mode, frequency, color, fill_opacity, dash_array in entries:
+
         coords = MN_COUNTY_COORDS.get(county)
+
         if not coords:
             continue
-        lat, lon = jitter(coords[0], coords[1], seed=f"{name}|{county}|{mode}")
+
+        lat, lon = jitter(
+            coords[0],
+            coords[1],
+            seed=f"{name}|{county}|{mode}"
+        )
+
         tooltip = f"{name} — {county} ({mode}, {frequency})"
-        popup = make_popup(row, county, mode, frequency)
-        add_marker(fmap, lat, lon, color, fill_opacity, dash_array, tooltip, popup)
 
-# ── Render ─────────────────────────────────────────────────────────────────
+        popup = make_popup(
+            row=row,
+            county=county,
+            mode=mode,
+            frequency=frequency
+        )
 
-st_folium(fmap, use_container_width=True, height=620, returned_objects=[])
+        add_marker(
+            fmap,
+            lat,
+            lon,
+            color,
+            fill_opacity,
+            dash_array,
+            tooltip,
+            popup,
+        )
+
+# Optional layer control
+folium.LayerControl().add_to(fmap)
+
+# ── Render ──────────────────────────────────────────────────────────────
+
+st_folium(
+    fmap,
+    use_container_width=True,
+    height=620,
+    returned_objects=[],
+)
 
 # ── Summary table ──────────────────────────────────────────────────────────
 
