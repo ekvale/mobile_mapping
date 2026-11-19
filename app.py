@@ -236,7 +236,7 @@ def add_marker(fmap, lat, lon, color, fill_opacity, dash_array, tooltip_text, po
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(ROOT / "data/cleaned_mobile_landscape_data.csv")
+    df = pd.read_csv(ROOT / "data/cleaned_mobile_landscape_data_2.csv")
     return df[df["program_type"] != "Incomplete"].reset_index(drop=True)
 
 df_all = load_data()
